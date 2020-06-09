@@ -1,7 +1,7 @@
 from src._token import *
 
 
-def main(filepath):
+def lexical_analysis(filepath) -> TokenStream:
     print("Target file", filepath)
 
     stream = TokenStream()
@@ -20,6 +20,8 @@ def main(filepath):
 
                 elif delimiter.match(c):
                     if not token_string:
+                        if c == "\n":
+                            stream.tokens.append(Token.init_from_string("\n", line_num))
                         continue
                     token = Token.init_from_string(token_string, line_num)
                     stream.tokens.append(token)
@@ -31,9 +33,9 @@ def main(filepath):
             if token_string:
                 token = Token.init_from_string(token_string, line_num)
                 stream.tokens.append(token)
+        stream.tokens.append(Token(token_type=TokenType.TOK_EOF))
 
-    for token in stream.tokens:
-        print(token)
+    return stream
 
 
 if __name__ == '__main__':
@@ -43,4 +45,4 @@ if __name__ == '__main__':
     if len(args) < 2:
         print("no input")
     else:
-        main(args[1])
+        lexical_analysis(args[1])
