@@ -84,19 +84,18 @@ class Parser:
         """
         token = self.tokens.currentToken
 
-        if left := self._get_id_or_digit(token) is None:
+        if (left := self._get_id_or_digit(token)) is None:
             return None
 
         token = self.tokens.nextToken()
         if ((token.token_type == TokenType.TOK_SYMBOL)
                 and self._symbol_pattern.match(token.token_string)):
             op = token.token_string
-            # symbol = SymbolAST(value=token.token_string)
         else:
             return None
 
         token = self.tokens.nextToken()
-        if right := self._get_id_or_digit(token) is None:
+        if (right := self._get_id_or_digit(token)) is None:
             return None
 
         return BinaryExprAST(left=left, op=op, right=right)
