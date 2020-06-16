@@ -19,13 +19,13 @@ def lexical_analysis(filepath) -> TokenStream:
                     token_string = token_string + c
 
                 elif delimiter.match(c):
-                    if not token_string:
-                        if c == "\n":
-                            stream.tokens.append(Token.init_from_string("\n", line_num))
-                        continue
-                    token = Token.init_from_string(token_string, line_num)
-                    stream.tokens.append(token)
-                    token_string = ""
+                    if token_string:
+                        token = Token.init_from_string(token_string, line_num)
+                        stream.tokens.append(token)
+                        token_string = ""
+                    if c == "\n":
+                        stream.tokens.append(Token.init_from_string("\n", line_num))
+
                 else:
                     raise Exception(f"Unsupported character: {c}")
 

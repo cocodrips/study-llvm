@@ -1,7 +1,7 @@
 from lexer import lexical_analysis
 from _token import *
 from ast import *
-from typing import Optional
+from typing import Optional, List
 
 
 def reset_stream_if_not_match(func):
@@ -17,13 +17,21 @@ def reset_stream_if_not_match(func):
     return wrapper
 
 
+
+
 class Parser:
     def __init__(self, filename):
         self.tokens: TokenStream = lexical_analysis(filename)
+        self.variable_table: List[str] = []
+        self.unit: Optional[StatementListAST] = None
 
     @property
     def _symbol_pattern(self):
         return re.compile(r"[+-]")
+
+    def parse(self):
+        self.visit_transration_unit()
+        self.semantic_analysis()
 
     def visit_transration_unit(self):
         unit = StatementListAST()
@@ -32,6 +40,7 @@ class Parser:
             ast = self.visit_statement()
             if ast:
                 unit.asts.append(ast)
+        self.unit = unit
         return unit
 
     def visit_statement(self):
@@ -110,18 +119,14 @@ class Parser:
         if token.token_type != TokenType.TOK_PRINT:
             return None
 
-        self.tokens.nextToken()
+        token = self.tokens.nextToken()
         if binary_expr := self.visit_binary_expr():
             return PrintAST(arg=binary_expr)
+
+        if variable := self._get_id_or_digit(token):
+            return PrintAST(arg=variable)
         return None
 
-    def visit_variable(self):
-        token = self.tokens.currentToken
-
-        if token.token_type != TokenType.TOK_IDENTIFIER:
-            return None
-
-        return VariableAST(name=token.token_string)
 
     def _get_id_or_digit(self, token):
         if token.token_type == TokenType.TOK_IDENTIFIER:
@@ -129,6 +134,20 @@ class Parser:
         elif token.token_type == TokenType.TOK_DIGIT:
             return DigitAST(value=token.number)
         return None
+
+    def semantic_analysis(self):
+        if self.unit is None:
+            raise Exception("Please visit_transration_unit first.")
+        for ast in self.unit.asts:
+            if isinstance(ast, AssignmentAST):
+                self.variable_table.append(ast.variable.name)
+            else:
+                for ast in vars(ast).values():
+                    if isinstance(ast, VariableAST):
+                        if ast.name not in self.variable_table:
+                            raise Exception(f"Parse error: {ast.name} is not declared.")
+
+
 
 
 if __name__ == '__main__':
@@ -139,5 +158,5 @@ if __name__ == '__main__':
         print("no input")
     else:
         parser = Parser(args[1])
-        unit = parser.visit_transration_unit()
-        print(unit.asts)
+        parser.parse()
+        print(parser.unit.asts, parser.variable_table)
