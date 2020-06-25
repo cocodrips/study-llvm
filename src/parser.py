@@ -30,28 +30,28 @@ class Parser:
         return re.compile(r"[+-]")
 
     def parse(self):
-        self.visit_transration_unit()
-        self.semantic_analysis()
+        self._visit_transration_unit()
+        self._semantic_analysis()
 
-    def visit_transration_unit(self):
+    def _visit_transration_unit(self):
         unit = StatementListAST()
 
         while self.tokens.currentToken.token_type != TokenType.TOK_EOF:
-            ast = self.visit_statement()
+            ast = self._visit_statement()
             if ast:
                 unit.asts.append(ast)
         self.unit = unit
         return unit
 
-    def visit_statement(self):
+    def _visit_statement(self):
         token = self.tokens.currentToken
 
         def get_statement():
             if token.token_type == TokenType.TOK_IDENTIFIER:
-                if binary_expr := self.visit_binary_expr():
+                if binary_expr := self._visit_binary_expr():
                     return binary_expr
 
-                if assign_expr := self.visit_assignment():
+                if assign_expr := self._visit_assignment():
                     return assign_expr
 
             if token.token_type == TokenType.TOK_PRINT:
@@ -67,7 +67,7 @@ class Parser:
         return None
 
     @reset_stream_if_not_match
-    def visit_assignment(self):
+    def _visit_assignment(self):
         token = self.tokens.currentToken
 
         if token.token_type != TokenType.TOK_IDENTIFIER:
@@ -87,7 +87,7 @@ class Parser:
         return AssignmentAST(variable=variable, value=value)
 
     @reset_stream_if_not_match
-    def visit_binary_expr(self) -> Optional[BinaryExprAST]:
+    def _visit_binary_expr(self) -> Optional[BinaryExprAST]:
         """
         BINARY_EXPR := <ID | DIGIT> <SYMBOL> <ID | DIGIT>
         """
@@ -120,7 +120,7 @@ class Parser:
             return None
 
         token = self.tokens.nextToken()
-        if binary_expr := self.visit_binary_expr():
+        if binary_expr := self._visit_binary_expr():
             return PrintAST(arg=binary_expr)
 
         if variable := self._get_id_or_digit(token):
@@ -135,7 +135,7 @@ class Parser:
             return DigitAST(value=token.number)
         return None
 
-    def semantic_analysis(self):
+    def _semantic_analysis(self):
         if self.unit is None:
             raise Exception("Please visit_transration_unit first.")
         for ast in self.unit.asts:
