@@ -67,6 +67,8 @@ class CodeGen:
             printf = ll.Function(self.module, printf_ty, name="printf")
             self.fmt_arg = self.builder.bitcast(global_fmt, voidptr_ty)
 
+            if isinstance(ast.arg, VariableAST):
+                p_value = self._load_variable(ast.arg.name)
             if isinstance(ast.arg, DigitAST):
                 p_value = ll.Constant(ll.IntType(32), ast.arg.value)
 
@@ -77,15 +79,17 @@ class CodeGen:
         pass
 
     def _generate_assignment(self, ast: AssignmentAST):
+        ptr = self.builder.alloca(ll.IntType(32))
         name = ast.variable.name
 
-        if name not in self.variable_dict.keys():
-            ptr_variable = self.builder.alloca(i32)
-            self.variable_dict[name] = ptr_variable
+        if isinstance(ast.value, DigitAST):
+            self.builder.store(self._generate_digit(ast.value), ptr)
+        if isinstance(ast.value, VariableAST):
+            self.builder.store(self._load_variable(ast.value.name), ptr)
+        self.variable_dict[name] = ptr
 
-        ptr_variable = self.variable_dict[name]
-        variable = self._gen(ast.value)
-        self.builder.store(variable, ptr_variable)
+    def _load_variable(self, name):
+        return self.builder.load(self.variable_dict[name])
 
     def _generate_digit(self, ast: DigitAST):
         return ll.Constant(i32, ast.value)
